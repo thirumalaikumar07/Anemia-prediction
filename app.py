@@ -9,16 +9,12 @@ app = Flask(__name__)
 loaded_model = joblib.load('logistic_regression_model.joblib')
 loaded_scaler = joblib.load('scaler.joblib')
 loaded_label_encoder = joblib.load('label_encoder.joblib')
-
 REQUIRED_FEATURES = ["gender", "hemoglobin", "mch", "mchc", "mcv"]
 
 @app.route("/")
 def home():
     return "Anemia Prediction API is running"
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    if not request.is_json:
+if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
     
     try:
@@ -46,4 +42,5 @@ def predict():
         return jsonify({"error": f"Error during prediction: {str(e)}"}), 400
 
 if __name__ == "__main__":
+    print("Starting prediction API...")
     app.run(debug=True)
