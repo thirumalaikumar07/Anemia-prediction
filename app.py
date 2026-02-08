@@ -50,6 +50,13 @@ def predict():
 
 print("Flask application with /predict endpoint and full prediction logic defined.")
 
-if __name__ == "__main__":
-    print("Starting prediction API...")
-    app.run(debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+
+    # If running in Colab and needing public access
+    from pyngrok import ngrok
+    # Terminate open tunnels if any
+    ngrok.kill()
+    # Set up a tunnel to the Flask app
+    public_url = ngrok.connect(addr='5000', proto='http')
+    print(f"* ngrok tunnel available at: {public_url}")
