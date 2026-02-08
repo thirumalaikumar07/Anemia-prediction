@@ -1,43 +1,42 @@
 from flask import Flask, request, jsonify
-import pandas as pd
 import joblib
+import numpy as np
+import os
 
 app = Flask(__name__)
 
-# Load the previously trained logistic regression model, scaler, and label encoder
-loaded_model = joblib.load('logistic_regression_model.joblib')
-loaded_scaler = joblib.load('scaler.joblib')
-loaded_label_encoder = joblib.load('label_encoder.joblib')
+# Load model & scaler
+model = joblib.load("logistic_regression_model.joblib")
+scaler = joblib.load("scaler.joblib")
 
-print("All objects loaded successfully:")
-print("Type of loaded_model:", type(loaded_model))
-print("Type of loaded_scaler:", type(loaded_scaler))
-print("Type of loaded_label_encoder:", type(loaded_label_encoder))
+@app.route("/")
+def home():
+    return "Anemia Prediction API is running"
 
-# Define the prediction route
-@app.route('/predict', methods=['POST'])
+@app.route("/predict", methods=["POST"])
 def predict():
-    if request.is_json:
-        try:
-            data = request.get_json()
-            # Convert input JSON to a DataFrame
-            input_df = pd.DataFrame([data])
+    data = request.json
 
-            # Scale input features using the loaded scaler
-            input_scaled = loaded_scaler.transform(input_df)
+    # Example input order – adjust based on your training
+    features = [
+        data["gender"],
+        data["hemoglobin"],
+        data["mch"],
+        data["mchc"],
+        data["mcv"]
+    ]
 
-            # Make predictions using the loaded model
-            prediction_encoded = loaded_model.predict(input_scaled)
+    features = np.array(features).reshape(1, -1)
+    features_scaled = scaler.transform(features)
 
-            # Decode the prediction back to original label
-            prediction_label = loaded_label_encoder.inverse_transform(prediction_encoded)
+    prediction = model.predict(features_scaled)
 
-            return jsonify({"prediction": prediction_label[0]})
-        except Exception as e:
-            return jsonify({"error": f"Error during prediction: {str(e)}"}), 400
-    else:
-        return jsonify({"error": "Request must be JSON"}), 400
+    result = "Anemia" if prediction[0] == 1 else "No Anemia"
+
+    return jsonify({
+        "prediction": result
+    })
 
 if __name__ == "__main__":
-    print("Starting prediction API...")
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
